@@ -1,0 +1,9 @@
+{
+  "name": "Speed Stars",
+  "short_name": "Speed Stars",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#111112",
+  "theme_color": "#111112"
+}
