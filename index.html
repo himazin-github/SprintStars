@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Speed Stars</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #1a1819;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+    #game-wrapper {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #111112;
+    }
+    #unity-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #unity-canvas {
+      width: 100%;
+      height: 100%;
+      max-width: 100vw;
+      max-height: 100vh;
+      aspect-ratio: 16 / 9;
+      background: #231F20;
+      display: block;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+      outline: none;
+    }
+    /* Loading overlay */
+    #loading-cover {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, #252224 0%, #111011 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      transition: opacity 0.5s ease-out;
+    }
+    .game-logo {
+      font-size: clamp(2.4rem, 7vw, 4.2rem);
+      font-weight: 900;
+      font-style: italic;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, #ffcc00, #ff3366, #33ccff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+      filter: drop-shadow(0 0 20px rgba(255, 100, 100, 0.35));
+    }
+    .game-subtitle {
+      font-size: 0.95rem;
+      color: #999;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 36px;
+      font-weight: 500;
+    }
+    .progress-box {
+      width: min(380px, 80vw);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .progress-bar-bg {
+      width: 100%;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #33ccff, #ff3366);
+      border-radius: 6px;
+      transition: width 0.15s ease;
+      box-shadow: 0 0 12px rgba(51, 204, 255, 0.6);
+    }
+    .progress-status {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: #bbb;
+      font-weight: 600;
+    }
+    /* Controls hint */
+    .controls-hint {
+      margin-top: 32px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 0.85rem;
+      color: #ddd;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .key-badge {
+      background: #2a2a2e;
+      border: 1px solid #555;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-weight: bold;
+      color: #fff;
+      font-size: 0.8rem;
+    }
+    /* Fullscreen Button */
+    #fullscreen-btn {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      color: #eee;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 50;
+      opacity: 0.7;
+      transition: opacity 0.2s, background 0.2s;
+    }
+    #fullscreen-btn:hover {
+      opacity: 1;
+      background: rgba(0, 0, 0, 0.85);
+    }
+  </style>
+</head>
+<body>
+  <div id="game-wrapper">
+    <div id="unity-container">
+      <canvas id="unity-canvas" tabindex="-1"></canvas>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loading-cover">
+      <div class="game-logo">SPEED STARS</div>
+      <div class="game-subtitle">Ad-Free Lightweight Edition</div>
+      <div class="progress-box">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progress-fill"></div>
+        </div>
+        <div class="progress-status">
+          <span id="loading-label">Loading Game...</span>
+          <span id="progress-percent">0%</span>
+        </div>
+      </div>
+      <div class="controls-hint">
+        <span>Controls:</span>
+        <span class="key-badge">◀</span>
+        <span class="key-badge">▶</span>
+        <span>or</span>
+        <span class="key-badge">A</span>
+        <span class="key-badge">D</span>
+        <span>(Tap alternately to sprint!)</span>
+      </div>
+    </div>
+
+    <!-- Fullscreen Button -->
+    <button id="fullscreen-btn" title="Toggle Fullscreen">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+      </svg>
+      <span>Fullscreen</span>
+    </button>
+  </div>
+
+  <script>
+    // --- 1. Completely Ad-Free, Offline Poki SDK Mock ---
+    const noop = () => {};
+    const resolvePromise = (val) => Promise.resolve(val);
+
+    window.PokiSDK = {
+      init: () => resolvePromise(),
+      initWithVideoHB: () => resolvePromise(),
+      customEvent: noop,
+      commercialBreak: () => resolvePromise(),
+      rewardedBreak: () => resolvePromise(true), // Automatically grant reward without ads
+      displayAd: noop,
+      destroyAd: noop,
+      getLeaderboard: () => resolvePromise([]),
+      getSharableURL: () => resolvePromise(window.location.href),
+      shareableURL: () => resolvePromise(window.location.href),
+      getURLParam: () => "",
+      getLanguage: () => (navigator.language || "en").substring(0, 2),
+      isAdBlocked: () => false,
+      disableProgrammatic: noop,
+      gameLoadingStart: noop,
+      gameLoadingFinished: noop,
+      gameLoadingProgress: noop,
+      gameInteractive: noop,
+      roundStart: noop,
+      roundEnd: noop,
+      muteAd: noop,
+      setDebug: noop,
+      gameplayStart: noop,
+      gameplayStop: noop,
+      happyTime: noop,
+      setPlayerAge: noop,
+      togglePlayerAdvertisingConsent: noop,
+      logError: noop,
+      sendHighscore: noop,
+      setDebugTouchOverlayController: noop
+    };
+
+    // --- 2. Poki Bridge Mock for Unity C# ---
+    let pokiBridgeName = null;
+
+    window.initPokiBridge = function(bridgeName) {
+      pokiBridgeName = bridgeName;
+      if (window.unityGame) {
+        try {
+          window.unityGame.SendMessage(bridgeName, "ready");
+        } catch (e) {
+          console.warn("initPokiBridge send ready failed:", e);
+        }
+      }
+    };
+
+    window.commercialBreak = function() {
+      if (pokiBridgeName && window.unityGame) {
+        window.unityGame.SendMessage(pokiBridgeName, "commercialBreakCompleted");
+      }
+    };
+
+    window.rewardedBreak = function() {
+      if (pokiBridgeName && window.unityGame) {
+        // "true" indicates the user received the reward
+        window.unityGame.SendMessage(pokiBridgeName, "rewardedBreakCompleted", "true");
+      }
+    };
+
+    window.shareableURL = function(url) {
+      if (pokiBridgeName && window.unityGame) {
+        window.unityGame.SendMessage(pokiBridgeName, "shareableURLResolved", url || window.location.href);
+      }
+    };
+
+    // --- 3. Unity WebGL Loader ---
+    const canvas = document.querySelector("#unity-canvas");
+    const loadingCover = document.querySelector("#loading-cover");
+    const progressFill = document.querySelector("#progress-fill");
+    const progressPercent = document.querySelector("#progress-percent");
+    const loadingLabel = document.querySelector("#loading-label");
+    const fullscreenBtn = document.querySelector("#fullscreen-btn");
+
+    const buildUrl = "Build";
+    const config = {
+      dataUrl: buildUrl + "/6127fbba3e79cbcada24ba1ffd033f77.data",
+      frameworkUrl: buildUrl + "/b0e5ec181474d494c6ff3c9ad9c3b1bd.js",
+      codeUrl: buildUrl + "/fe2a5824416bebe1cc941510618103f9.wasm",
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: "Luke Doukakis",
+      productName: "Speed Stars",
+      productVersion: "2.40",
+      devicePixelRatio: 1
+    };
+
+    const loaderScript = document.createElement("script");
+    loaderScript.src = buildUrl + "/Build_v2-40w.loader.js";
+    loaderScript.onload = () => {
+      createUnityInstance(canvas, config, (progress) => {
+        const pct = Math.min(100, Math.round(progress * 100));
+        progressFill.style.width = pct + "%";
+        progressPercent.textContent = pct + "%";
+        if (progress >= 1) {
+          loadingLabel.textContent = "Starting game...";
+        }
+      }).then((instance) => {
+        window.unityGame = instance;
+        loadingCover.style.opacity = "0";
+        setTimeout(() => {
+          loadingCover.style.display = "none";
+        }, 500);
+
+        if (pokiBridgeName) {
+          instance.SendMessage(pokiBridgeName, "ready");
+        }
+        canvas.focus();
+      }).catch((err) => {
+        console.error("Unity load failed:", err);
+        loadingLabel.textContent = "Loading error: " + err;
+      });
+    };
+    document.body.appendChild(loaderScript);
+
+    // Fullscreen handler
+    fullscreenBtn.addEventListener("click", () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    });
+
+    // Ensure keyboard input goes directly to game canvas
+    window.addEventListener("click", () => {
+      if (document.activeElement !== canvas) {
+        canvas.focus();
+      }
+    });
+  </script>
+</body>
+</html>
