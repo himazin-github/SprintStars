@@ -1,9 +1,18 @@
 {
   "name": "Speed Stars",
   "short_name": "Speed Stars",
+  "description": "Ad-free lightweight running game",
   "start_url": "./index.html",
   "display": "fullscreen",
   "orientation": "landscape",
   "background_color": "#111112",
-  "theme_color": "#111112"
+  "theme_color": "#111112",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%23111112'/%3E%3Cpath d='M40 140 L90 50 L110 50 L80 140 Z M100 140 L150 50 L170 50 L140 140 Z' fill='%23ff3366'/%3E%3Cpolygon points='50,140 100,50 142,50 92,140' fill='%23ffcc00' opacity='0.8'/%3E%3C/svg%3E",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }
